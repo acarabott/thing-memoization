@@ -1,7 +1,7 @@
-import { ArraySet, defArraySet, defEquivMap, EquivMap } from "@thi.ng/associative";
+import { defEquivMap } from "@thi.ng/associative";
 import { Atom, defAtom } from "@thi.ng/atom";
 import { start } from "@thi.ng/hdom";
-import { button, div, li, ul } from "@thi.ng/hiccup-html";
+import { button, div } from "@thi.ng/hiccup-html";
 import { memoize } from "@thi.ng/memoize";
 import { map } from "@thi.ng/transducers";
 
@@ -35,7 +35,6 @@ const getModels = (state: Atom<State>) => {
 };
 
 const getViewModels = (values: State["models"]): ViewModel[] => {
-    console.log("this");
     const h = 50;
     const viewModels = values.map(
         (model, i): ViewModel => ({
