@@ -2,6 +2,8 @@ import { EquivMap } from "@thi.ng/associative";
 import { Atom } from "@thi.ng/atom";
 import { ICache } from "@thi.ng/cache";
 
+export const MODEL_MAX_VALUE = 100;
+
 export interface Model {
     id: string;
     value: number;
@@ -15,6 +17,7 @@ export type InteractionState = "none" | "hovered" | "grabbed";
 
 export interface ModelViewState {
     state: InteractionState;
+    grabbedOffset_px: number;
 }
 
 export interface ModelViewStateEntry {

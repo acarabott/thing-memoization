@@ -1,5 +1,7 @@
 import { Atom } from "@thi.ng/atom";
-import { ModelViewStateEntry, State, ViewModel } from "./api";
+import { ModelViewStateEntry, MODEL_MAX_VALUE, State, ViewModel } from "./api";
+import { fitClamped } from "@thi.ng/math";
+import { WORKSPACE_WIDTH_PX } from "./components";
 
 export const getModels = (state: Atom<State>) => {
     return state.deref().models;
@@ -15,10 +17,12 @@ export const getViewModels = (
         if (item === undefined) {
             throw new Error("No view state found for model");
         }
+        const x = fitClamped(model.value, 0, MODEL_MAX_VALUE, 0, WORKSPACE_WIDTH_PX);
+        
         return {
             model,
             rect: {
-                x: 10,
+                x,
                 y: 10 + i * (h + 10),
                 w: 300,
                 h,

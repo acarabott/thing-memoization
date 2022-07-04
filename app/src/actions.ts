@@ -1,18 +1,29 @@
 import { uuid } from "@thi.ng/random";
-import { Ctx, Model, ModelViewState, ModelViewStateEntry } from "./api";
+import { Ctx, Model, ModelViewState, ModelViewStateEntry, MODEL_MAX_VALUE } from "./api";
 
 export const addModel = (ctx: Ctx, model: Model) => {
     ctx.state.swapIn(["models"], (models): Model[] => [...models, model]);
     ctx.viewState.swapIn(["models"], (models): ModelViewStateEntry[] => [
         ...models,
-        { modelId: model.id, state: { state: "none" } },
+        { modelId: model.id, state: { state: "none", grabbedOffset_px: 0 } },
     ]);
+};
+
+export const updateModel = (ctx: Ctx, update: Pick<Model, "id"> & Partial<Model>) => {
+    ctx.state.swapIn(["models"], (models): Model[] =>
+        models.map((model): Model => {
+            if (model.id === update.id) {
+                return { ...model, ...update };
+            }
+            return model;
+        }),
+    );
 };
 
 export const getRandomModel = (): Model => {
     const model: Model = {
         id: uuid(),
-        value: Math.floor(Math.random() * 1000),
+        value: Math.floor(Math.random() * MODEL_MAX_VALUE),
     };
 
     return model;
@@ -41,8 +52,8 @@ export const unhoverModel = (ctx: Ctx, modelId: Model["id"]) => {
     updateViewStates(ctx, modelId, { state: "none" });
 };
 
-export const grabModel = (ctx: Ctx, modelId: Model["id"]) => {
-    updateViewStates(ctx, modelId, { state: "grabbed" });
+export const grabModel = (ctx: Ctx, modelId: Model["id"], grabbedOffset_px: number) => {
+    updateViewStates(ctx, modelId, { state: "grabbed", grabbedOffset_px });
 };
 
 export const releaseModels = (ctx: Ctx) => {

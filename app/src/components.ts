@@ -1,4 +1,6 @@
+import * as css from "@thi.ng/hiccup-css";
 import { button, div, textArea } from "@thi.ng/hiccup-html";
+import { fitClamped } from "@thi.ng/math";
 import { map, reverse, str } from "@thi.ng/transducers";
 import {
     addModel,
@@ -7,9 +9,17 @@ import {
     hoverModel,
     releaseModels,
     unhoverModel,
+    updateModel,
 } from "./actions";
-import { Ctx, InteractionState, State } from "./api";
+import { Ctx, InteractionState, Model, MODEL_MAX_VALUE, State } from "./api";
 import { CACHE_MAX_LENGTH } from "./cache";
+
+const modelClass = "model";
+css.injectStyleSheet(
+    css.css([
+        [`.${modelClass}`, { "user-select": "none", "-webkit-user-select": "none" }],
+    ]) as string,
+);
 
 const colorLookup: Record<InteractionState, string> = {
     none: "white",
@@ -17,19 +27,32 @@ const colorLookup: Record<InteractionState, string> = {
     grabbed: "rgb(43, 212, 156)",
 };
 
+export const WORKSPACE_WIDTH_PX = 1000;
+
+const defOnDrag = (ctx: Ctx, target: HTMLElement, modelId: Model["id"]) => {
+    const onDrag = (event: MouseEvent) => {
+        const viewModel = ctx.getViewModels().find((vm) => vm.model.id === modelId);
+        if (viewModel === undefined) {
+            throw new Error("no view model for model");
+        }
+        const targetRect = target.getBoundingClientRect();
+        const x = event.clientX - targetRect.x - viewModel.grabbedOffset_px;
+        const value = Math.round(fitClamped(x, 0, WORKSPACE_WIDTH_PX, 0, MODEL_MAX_VALUE));
+
+        updateModel(ctx, { ...viewModel.model, value });
+    };
+
+    return onDrag;
+};
+
 export const modelsCmp = (ctx: Ctx) => {
     const viewModels = ctx.getViewModels();
-
-    const upTarget = document.body;
-    const onUp = () => {
-        releaseModels(ctx);
-        upTarget.removeEventListener("mouseup", onUp);
-    };
 
     const valueCmps = map(
         (vm) =>
             div(
                 {
+                    class: modelClass,
                     style: {
                         position: "absolute",
                         left: `${vm.rect.x}px`,
@@ -48,9 +71,21 @@ export const modelsCmp = (ctx: Ctx) => {
                             unhoverModel(ctx, vm.model.id);
                         }
                     },
-                    onmousedown: () => {
-                        grabModel(ctx, vm.model.id);
-                        upTarget.addEventListener("mouseup", onUp);
+                    onmousedown: (event) => {
+                        grabModel(ctx, vm.model.id, event.offsetX);
+
+                        const target = document.body;
+
+                        const onDrag = defOnDrag(ctx, target, vm.model.id);
+                        target.addEventListener("mousemove", onDrag);
+
+                        const onUp = () => {
+                            releaseModels(ctx);
+                            target.removeEventListener("mouseup", onUp);
+                            target.removeEventListener("mousemove", onDrag);
+                        };
+
+                        target.addEventListener("mouseup", onUp);
                     },
                 },
                 div({}, `id: ${vm.model.id}`),
@@ -64,7 +99,7 @@ export const modelsCmp = (ctx: Ctx) => {
         {
             style: {
                 position: "relative",
-                width: "500px",
+                width: `${WORKSPACE_WIDTH_PX}px`,
                 height: "500px",
                 background: "black",
                 overflow: "scroll",
@@ -110,7 +145,7 @@ export const logCmp = (ctx: Ctx) => {
 export const cacheCmp = (ctx: Ctx) => {
     return div(
         {},
-        div({}, `Size: ${ctx.cacheMap.size} / ${CACHE_MAX_LENGTH}`),
+        div({}, `Cache usage: ${ctx.cacheMap.size} / ${CACHE_MAX_LENGTH}`),
         textArea({ value: JSON.stringify([...ctx.cache.values()], null, 2), rows: 80, cols: 80 }),
     );
 };
