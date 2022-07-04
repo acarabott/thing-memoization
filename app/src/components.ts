@@ -138,23 +138,60 @@ export const logCmp = (ctx: Ctx) => {
 
     return textArea({
         value,
-        cols: 80,
+        cols: 22,
         rows: 20,
     });
 };
 
+const stateCmp = (ctx: Ctx) => {
+    const state = ctx.state.deref();
+    const value = JSON.stringify(state, null, 2);
+
+    return div(
+        {},
+        div({}, `State - num models: ${state.models.length}`),
+        textArea({
+            value,
+            cols: 55,
+            rows: 20,
+        }),
+    );
+};
+
+const viewStateCmp = (ctx: Ctx) => {
+    const viewState = ctx.viewState.deref();
+    const value = JSON.stringify(viewState, null, 2);
+
+    return div(
+        {},
+        div({}, `View State - num models; ${viewState.models.length}`),
+        textArea({
+            value,
+            cols: 55,
+            rows: 20,
+        }),
+    );
+};
+
 export const cacheCmp = (ctx: Ctx) => {
+    const value = JSON.stringify([...ctx.cache.values()], null, 2);
     return div(
         {},
         div({}, `Cache usage: ${ctx.cacheMap.size} / ${CACHE_MAX_LENGTH}`),
-        textArea({ value: JSON.stringify([...ctx.cache.values()], null, 2), rows: 80, cols: 80 }),
+        textArea({ value, rows: 52, cols: 55 }),
     );
 };
 
 export const mainCmp = (ctx: Ctx) => {
     return div(
         { style: { display: "flex" } },
-        div({}, addModelCmp(ctx), noopModelCmp(ctx), modelsCmp(ctx), logCmp(ctx)),
+        div(
+            {},
+            addModelCmp(ctx),
+            noopModelCmp(ctx),
+            modelsCmp(ctx),
+            div({ style: { display: "flex" } }, logCmp(ctx), stateCmp(ctx), viewStateCmp(ctx)),
+        ),
         cacheCmp(ctx),
     );
 };
