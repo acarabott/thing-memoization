@@ -11,6 +11,19 @@ export interface State {
     models: Model[];
 }
 
+export interface ModelViewState {
+    isHovered: boolean;
+}
+
+export interface ModelViewStateEntry {
+    modelId: Model["id"];
+    state: ModelViewState;
+}
+
+export interface ViewState {
+    models: ModelViewStateEntry[];
+}
+
 export interface Rect {
     x: number;
     y: number;
@@ -18,21 +31,12 @@ export interface Rect {
     h: number;
 }
 
-export interface ModelViewState {
-    id: Model["id"];
-    isHovered: boolean;
-}
-
-export interface ViewState {
-    models: ModelViewState[];
-}
-
 export interface ViewModel extends ModelViewState {
     model: Model;
     rect: Rect;
 }
 
-export type ModelCacheKey = [Model[], ModelViewState[]];
+export type ModelCacheKey = [Model[], ModelViewStateEntry[]];
 export type ModelCacheValue = ViewModel[];
 export type ModelCache = ICache<ModelCacheKey, ModelCacheValue>;
 

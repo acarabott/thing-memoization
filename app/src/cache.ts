@@ -2,13 +2,13 @@ import { defEquivMap } from "@thi.ng/associative";
 import { LRUCache } from "@thi.ng/cache";
 import { memoize } from "@thi.ng/memoize";
 import {
-    ModelCache,
     Model,
-    ModelViewState,
-    ViewModel,
-    State,
+    ModelCache,
     ModelCacheKey,
     ModelCacheValue,
+    ModelViewStateEntry,
+    State,
+    ViewModel,
 } from "./api";
 import { getViewModels } from "./selectors";
 
@@ -25,8 +25,8 @@ export const defCache = () => {
 };
 
 export const defGetViewModelsMemoized = (cache: ModelCache, onCacheBusted: () => void) => {
-    return memoize<Model[], ModelViewState[], ViewModel[]>(
-        (models: State["models"], viewStates: ModelViewState[]) => {
+    return memoize<Model[], ModelViewStateEntry[], ViewModel[]>(
+        (models: State["models"], viewStates: ModelViewStateEntry[]) => {
             onCacheBusted();
             const result = getViewModels(models, viewStates);
             return result;

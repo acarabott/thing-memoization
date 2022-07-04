@@ -1,11 +1,11 @@
 import { uuid } from "@thi.ng/random";
-import { Ctx, Model, ModelViewState } from "./api";
+import { Ctx, Model, ModelViewState, ModelViewStateEntry } from "./api";
 
 export const addModel = (ctx: Ctx, model: Model) => {
     ctx.state.swapIn(["models"], (models): Model[] => [...models, model]);
-    ctx.viewState.swapIn(["models"], (models): ModelViewState[] => [
+    ctx.viewState.swapIn(["models"], (models): ModelViewStateEntry[] => [
         ...models,
-        { id: model.id, isHovered: false },
+        { modelId: model.id, state: { isHovered: false } },
     ]);
 };
 
@@ -18,26 +18,25 @@ export const getRandomModel = (): Model => {
     return model;
 };
 
-export const hoverModel = (ctx: Ctx, modelId: Model["id"]) => {
+const updateViewStates = (ctx: Ctx, modelId: Model["id"], viewState: Partial<ModelViewState>) => {
     ctx.viewState.swapIn(["models"], (modelViewStates) =>
-        modelViewStates.map((modelViewState) => {
-            if (modelViewState.id === modelId) {
-                return { ...modelViewState, isHovered: true };
+        modelViewStates.map((modelViewStateEntry): ModelViewStateEntry => {
+            if (modelViewStateEntry.modelId === modelId) {
+                return {
+                    ...modelViewStateEntry,
+                    state: { ...modelViewStateEntry.state, ...viewState },
+                };
             }
 
-            return modelViewState;
+            return modelViewStateEntry;
         }),
     );
 };
 
-export const unhoverModel = (ctx: Ctx, modelId: Model["id"]) => {
-    ctx.viewState.swapIn(["models"], (modelViewStates) =>
-        modelViewStates.map((modelViewState) => {
-            if (modelViewState.id === modelId) {
-                return { ...modelViewState, isHovered: false };
-            }
+export const hoverModel = (ctx: Ctx, modelId: Model["id"]) => {
+    updateViewStates(ctx, modelId, { isHovered: true });
+};
 
-            return modelViewState;
-        }),
-    );
+export const unhoverModel = (ctx: Ctx, modelId: Model["id"]) => {
+    updateViewStates(ctx, modelId, { isHovered: false });
 };

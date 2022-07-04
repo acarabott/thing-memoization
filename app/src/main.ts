@@ -1,19 +1,14 @@
 import { defAtom } from "@thi.ng/atom";
 import { start } from "@thi.ng/hdom";
-import { getRandomModel } from "./actions";
+import { addModel, getRandomModel } from "./actions";
 import { Ctx, State, ViewState } from "./api";
 import { defCache, defGetViewModelsMemoized } from "./cache";
 import { mainCmp } from "./components";
 import { getModels } from "./selectors";
 
 const app = () => {
-    const stateAtom = defAtom<State>({
-        models: [getRandomModel(), getRandomModel()],
-    });
-
-    const viewStateAtom = defAtom<ViewState>({
-        models: getModels(stateAtom).map((model) => ({ id: model.id, isHovered: false })),
-    });
+    const stateAtom = defAtom<State>({ models: [] });
+    const viewStateAtom = defAtom<ViewState>({ models: [] });
 
     const log: string[] = [];
 
@@ -32,6 +27,10 @@ const app = () => {
         log,
         ...viewModelCache,
     };
+
+    for (let i = 0; i < 2; i++) {
+        addModel(ctx, getRandomModel());
+    }
 
     return () => {
         return mainCmp(ctx);
