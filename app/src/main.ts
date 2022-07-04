@@ -1,11 +1,12 @@
 import { defEquivMap } from "@thi.ng/associative";
 import { Atom, defAtom } from "@thi.ng/atom";
 import { start } from "@thi.ng/hdom";
-import { button, div } from "@thi.ng/hiccup-html";
+import { button, div, li, ul } from "@thi.ng/hiccup-html";
 import { memoize } from "@thi.ng/memoize";
 import { map } from "@thi.ng/transducers";
 
 interface Model {
+    id: number;
     value: number;
 }
 
@@ -20,24 +21,40 @@ interface Rect {
     h: number;
 }
 
-interface ViewModel {
+interface ModelViewState {
+    id: Model["id"];
+    isHovered: boolean;
+}
+
+interface ViewState {
+    models: ModelViewState[];
+}
+
+interface ViewModel extends ModelViewState {
     model: Model;
     rect: Rect;
 }
 
 interface Ctx {
     state: Atom<State>;
+    viewState: Atom<ViewState>;
     getViewModels: () => ViewModel[];
+    getNextModelId: () => number;
+    log: string[];
 }
 
 const getModels = (state: Atom<State>) => {
     return state.deref().models;
 };
 
-const getViewModels = (values: State["models"]): ViewModel[] => {
+const getViewModels = (models: State["models"], viewStates: ModelViewState[]): ViewModel[] => {
     const h = 50;
-    const viewModels = values.map(
-        (model, i): ViewModel => ({
+    const viewModels = models.map((model, i): ViewModel => {
+        const viewState = viewStates.find((findViewState) => findViewState.id === model.id);
+        if (viewState === undefined) {
+            throw new Error("No view state found for model");
+        }
+        return {
             model,
             rect: {
                 x: 10,
@@ -45,22 +62,52 @@ const getViewModels = (values: State["models"]): ViewModel[] => {
                 w: 300,
                 h,
             },
-        }),
-    );
+            ...viewState,
+        };
+    });
 
     return viewModels;
 };
 
 const addModel = (ctx: Ctx, model: Model) => {
-    ctx.state.swapIn(["models"], (models) => [...models, model]);
+    ctx.state.swapIn(["models"], (models): Model[] => [...models, model]);
+    ctx.viewState.swapIn(["models"], (models): ModelViewState[] => [
+        ...models,
+        { id: model.id, isHovered: false },
+    ]);
 };
 
-const getRandomModel = (): Model => {
+const getRandomModel = (getNextModelId: () => Model["id"]): Model => {
     const model: Model = {
+        id: getNextModelId(),
         value: Math.floor(Math.random() * 1000),
     };
 
     return model;
+};
+
+const hoverModel = (ctx: Ctx, modelId: Model["id"]) => {
+    ctx.viewState.swapIn(["models"], (modelViewStates) =>
+        modelViewStates.map((modelViewState) => {
+            if (modelViewState.id === modelId) {
+                return { ...modelViewState, isHovered: true };
+            }
+
+            return modelViewState;
+        }),
+    );
+};
+
+const unhoverModel = (ctx: Ctx, modelId: Model["id"]) => {
+    ctx.viewState.swapIn(["models"], (modelViewStates) =>
+        modelViewStates.map((modelViewState) => {
+            if (modelViewState.id === modelId) {
+                return { ...modelViewState, isHovered: false };
+            }
+
+            return modelViewState;
+        }),
+    );
 };
 
 const modelsCmp = (ctx: Ctx) => {
@@ -76,8 +123,10 @@ const modelsCmp = (ctx: Ctx) => {
                         top: `${vm.rect.y}px`,
                         width: `${vm.rect.w}px`,
                         height: `${vm.rect.h}px`,
-                        background: "white",
+                        background: vm.isHovered ? "rgb(43, 156, 212)" : "white",
                     },
+                    onmouseenter: () => hoverModel(ctx, vm.model.id),
+                    onmouseleave: () => unhoverModel(ctx, vm.model.id),
                 },
                 `value: ${vm.model.value} rect: ${JSON.stringify(vm.rect)}`,
             ),
@@ -98,23 +147,77 @@ const modelsCmp = (ctx: Ctx) => {
 };
 
 const addModelCmp = (ctx: Ctx) => {
-    const addCmp = button({ onclick: () => addModel(ctx, getRandomModel()) }, "Add");
+    const addCmp = button(
+        { onclick: () => addModel(ctx, getRandomModel(ctx.getNextModelId)) },
+        "Add",
+    );
 
     return addCmp;
 };
 
-const app = () => {
-    const stateAtom = defAtom<State>({ models: [{ value: 666 }, { value: 333 }] });
+const noopModelCmp = (ctx: Ctx) => {
+    const noopCmp = button(
+        {
+            onclick: () =>
+                ctx.state.swap((oldState) => {
+                    const state: State = {
+                        models: oldState.models.map((model) => ({ ...model })),
+                    };
+                    return state;
+                }),
+        },
+        "No-op",
+    );
 
-    const cache = defEquivMap<Model[], ViewModel[]>();
-    const getViewModelsMemoized = memoize(getViewModels, cache);
+    return noopCmp;
+};
+
+const logCmp = (ctx: Ctx) => {
+    return ul(
+        {},
+        map((entry) => li({}, entry), ctx.log),
+    );
+};
+
+const app = () => {
+    const getNextModelId = (() => {
+        let nextId = 0;
+        return () => nextId++;
+    })();
+
+    const stateAtom = defAtom<State>({
+        models: [getRandomModel(getNextModelId), getRandomModel(getNextModelId)],
+    });
+
+    const viewStateAtom = defAtom<ViewState>({
+        models: getModels(stateAtom).map((model) => ({ id: model.id, isHovered: false })),
+    });
+
+    const log: string[] = [];
+
+    const cache = defEquivMap<[Model[], ModelViewState[]], ViewModel[]>();
+    const getViewModelsMemoized = memoize<Model[], ModelViewState[], ViewModel[]>(
+        (models: State["models"], viewStates: ModelViewState[]) => {
+            const now = new Date().toTimeString().split(" ")[0];
+            log.push(`${now}: Cache busted!`);
+
+            const result = getViewModels(models, viewStates);
+            return result;
+        },
+        cache,
+    );
+
     const ctx: Ctx = {
         state: stateAtom,
-        getViewModels: () => getViewModelsMemoized(getModels(stateAtom)),
+        viewState: viewStateAtom,
+        getViewModels: () =>
+            getViewModelsMemoized(getModels(stateAtom), viewStateAtom.deref().models),
+        getNextModelId,
+        log,
     };
 
     return () => {
-        return div({}, addModelCmp(ctx), modelsCmp(ctx));
+        return div({}, addModelCmp(ctx), noopModelCmp(ctx), modelsCmp(ctx), logCmp(ctx));
     };
 };
 
