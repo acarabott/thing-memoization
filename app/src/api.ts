@@ -1,7 +1,6 @@
 import { EquivMap } from "@thi.ng/associative";
 import { Atom } from "@thi.ng/atom";
 import { ICache } from "@thi.ng/cache";
-import { MapLike } from "@thi.ng/memoize";
 
 export const MODEL_MAX_VALUE = 100;
 
@@ -19,6 +18,7 @@ export interface State {
 export type InteractionState = "none" | "hovered" | "grabbed";
 
 export interface ModelViewState {
+    modelId: ModelID;
     state: InteractionState;
     grabbedOffset_px: number;
 }
@@ -35,12 +35,11 @@ export interface ViewModel extends ModelViewState {
     rect: Rect;
 }
 
-export type ModelViewStates = MapLike<ModelID, ModelViewState>;
+export type ModelViewStates = EquivMap<ModelID, ModelViewState>;
 
-export type ModelCacheKey = [Model[], ModelViewStates];
+export type ModelCacheKey = [Model[], ModelViewState[]];
 export type ModelCacheValue = ViewModel[];
 export type ModelCache = ICache<ModelCacheKey, ModelCacheValue>;
-
 
 export interface Ctx {
     state: Atom<State>;

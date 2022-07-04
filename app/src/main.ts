@@ -15,7 +15,7 @@ const app = () => {
         for (const model of state.models) {
             let modelState = viewState.get(model.id);
             if (modelState === undefined) {
-                modelState = defModelViewState();
+                modelState = defModelViewState(model.id);
             }
             toAdd.push([model.id, modelState]);
         }

@@ -1,8 +1,8 @@
 import { uuid } from "@thi.ng/random";
 import { Ctx, Model, ModelID, ModelViewState, MODEL_MAX_VALUE } from "./api";
 
-export const defModelViewState = (): ModelViewState => {
-    return { state: "none", grabbedOffset_px: 0 };
+export const defModelViewState = (modelId: ModelID): ModelViewState => {
+    return { modelId, state: "none", grabbedOffset_px: 0 };
 };
 
 export const addModel = (ctx: Ctx) => {

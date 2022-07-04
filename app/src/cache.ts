@@ -7,6 +7,7 @@ import {
     Model,
     ModelCacheKey,
     ModelCacheValue,
+    ModelViewState,
     ModelViewStates,
     MODEL_MAX_VALUE,
     State,
@@ -16,10 +17,10 @@ import { WORKSPACE_WIDTH_PX } from "./components";
 
 export const CACHE_MAX_LENGTH = 3;
 
-const getViewModelsImpl = (models: State["models"], viewStates: ModelViewStates): ViewModel[] => {
+const getViewModelsImpl = (models: State["models"], viewStates: ModelViewState[]): ViewModel[] => {
     const h = 80;
     const viewModels = models.map((model, i): ViewModel => {
-        const state = viewStates.get(model.id);
+        const state = viewStates.find((modelViewState) => modelViewState.modelId === model.id);
         if (state === undefined) {
             throw new Error("No view state found for model");
         }
@@ -51,8 +52,8 @@ export const defCache = (
         map: () => cacheMap,
     });
 
-    const memoized = memoize<Model[], ModelViewStates, ViewModel[]>(
-        (models: State["models"], viewStates: ModelViewStates) => {
+    const memoized = memoize<Model[], ModelViewState[], ViewModel[]>(
+        (models: State["models"], viewStates: ModelViewState[]) => {
             onCacheBusted();
             const result = getViewModelsImpl(models, viewStates);
             return result;
@@ -61,7 +62,7 @@ export const defCache = (
     );
 
     const getViewModels = () => {
-        return memoized(state.deref().models, viewStatesStore);
+        return memoized(state.deref().models, [...viewStatesStore.values()]);
     };
 
     return { cache, cacheMap, getViewModels };
