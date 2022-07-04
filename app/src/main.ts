@@ -1,9 +1,10 @@
 import { defEquivMap } from "@thi.ng/associative";
 import { Atom, defAtom } from "@thi.ng/atom";
+import { LRUCache } from "@thi.ng/cache";
 import { start } from "@thi.ng/hdom";
-import { button, div, li, ul } from "@thi.ng/hiccup-html";
+import { button, div, textArea } from "@thi.ng/hiccup-html";
 import { memoize } from "@thi.ng/memoize";
-import { map } from "@thi.ng/transducers";
+import { map, reverse, str } from "@thi.ng/transducers";
 
 interface Model {
     id: number;
@@ -140,6 +141,7 @@ const modelsCmp = (ctx: Ctx) => {
                 width: "500px",
                 height: "500px",
                 background: "black",
+                overflow: "scroll",
             },
         },
         valueCmps,
@@ -173,10 +175,17 @@ const noopModelCmp = (ctx: Ctx) => {
 };
 
 const logCmp = (ctx: Ctx) => {
-    return ul(
-        {},
-        map((entry) => li({}, entry), ctx.log),
-    );
+    const value: string = str("\n", reverse(ctx.log));
+
+    return textArea({
+        value,
+        cols: 80,
+        rows: 10,
+    });
+};
+
+const cacheCmp = (size: number) => {
+    return div({}, `Cache size: ${size}`);
 };
 
 const app = () => {
@@ -195,7 +204,10 @@ const app = () => {
 
     const log: string[] = [];
 
-    const cache = defEquivMap<[Model[], ModelViewState[]], ViewModel[]>();
+    const cache = new LRUCache(null, {
+        maxlen: 1,
+        map: () => defEquivMap<[Model[], ModelViewState[]], ViewModel[]>(),
+    });
     const getViewModelsMemoized = memoize<Model[], ModelViewState[], ViewModel[]>(
         (models: State["models"], viewStates: ModelViewState[]) => {
             const now = new Date().toTimeString().split(" ")[0];
@@ -217,7 +229,14 @@ const app = () => {
     };
 
     return () => {
-        return div({}, addModelCmp(ctx), noopModelCmp(ctx), modelsCmp(ctx), logCmp(ctx));
+        return div(
+            {},
+            addModelCmp(ctx),
+            noopModelCmp(ctx),
+            modelsCmp(ctx),
+            logCmp(ctx),
+            cacheCmp(cache.length),
+        );
     };
 };
 
