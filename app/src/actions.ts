@@ -1,3 +1,4 @@
+import { uuid } from "@thi.ng/random";
 import { Ctx, Model, ModelViewState } from "./api";
 
 export const addModel = (ctx: Ctx, model: Model) => {
@@ -8,9 +9,9 @@ export const addModel = (ctx: Ctx, model: Model) => {
     ]);
 };
 
-export const getRandomModel = (getNextModelId: () => Model["id"]): Model => {
+export const getRandomModel = (): Model => {
     const model: Model = {
-        id: getNextModelId(),
+        id: uuid(),
         value: Math.floor(Math.random() * 1000),
     };
 

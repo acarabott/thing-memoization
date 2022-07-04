@@ -3,7 +3,7 @@ import { Atom } from "@thi.ng/atom";
 import { ICache } from "@thi.ng/cache";
 
 export interface Model {
-    id: number;
+    id: string;
     value: number;
 }
 
@@ -34,13 +34,13 @@ export interface ViewModel extends ModelViewState {
 
 export type ModelCacheKey = [Model[], ModelViewState[]];
 export type ModelCacheValue = ViewModel[];
+export type ModelCache = ICache<ModelCacheKey, ModelCacheValue>;
 
 export interface Ctx {
     state: Atom<State>;
     viewState: Atom<ViewState>;
     getViewModels: () => ViewModel[];
-    getNextModelId: () => number;
     log: string[];
-    cache: ICache<ModelCacheKey, ModelCacheValue>;
+    cache: ModelCache;
     cacheMap: EquivMap<ModelCacheKey, ModelCacheValue>;
 }

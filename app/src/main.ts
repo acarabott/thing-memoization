@@ -1,32 +1,14 @@
-import { defEquivMap } from "@thi.ng/associative";
 import { defAtom } from "@thi.ng/atom";
-import { LRUCache } from "@thi.ng/cache";
 import { start } from "@thi.ng/hdom";
-import { memoize } from "@thi.ng/memoize";
 import { getRandomModel } from "./actions";
-import {
-    Ctx,
-    Model,
-    ModelCacheKey,
-    ModelCacheValue,
-    ModelViewState,
-    State,
-    ViewModel,
-    ViewState,
-} from "./api";
+import { Ctx, State, ViewState } from "./api";
+import { defCache, defGetViewModelsMemoized } from "./cache";
 import { mainCmp } from "./components";
-import { getModels, getViewModels } from "./selectors";
-
-export const CACHE_MAX_LENGTH = 3;
+import { getModels } from "./selectors";
 
 const app = () => {
-    const getNextModelId = (() => {
-        let nextId = 0;
-        return () => nextId++;
-    })();
-
     const stateAtom = defAtom<State>({
-        models: [getRandomModel(getNextModelId), getRandomModel(getNextModelId)],
+        models: [getRandomModel(), getRandomModel()],
     });
 
     const viewStateAtom = defAtom<ViewState>({
@@ -35,32 +17,20 @@ const app = () => {
 
     const log: string[] = [];
 
-    const cacheMap = defEquivMap<ModelCacheKey, ModelCacheValue>();
-    const cache = new LRUCache<ModelCacheKey, ModelCacheValue>(null, {
-        maxlen: CACHE_MAX_LENGTH,
-        map: () => cacheMap,
+    const viewModelCache = defCache();
+
+    const getViewModelsMemoized = defGetViewModelsMemoized(viewModelCache.cache, () => {
+        const now = new Date().toTimeString().split(" ")[0];
+        log.push(`${now}: Cache busted!`);
     });
-
-    const getViewModelsMemoized = memoize<Model[], ModelViewState[], ViewModel[]>(
-        (models: State["models"], viewStates: ModelViewState[]) => {
-            const now = new Date().toTimeString().split(" ")[0];
-            log.push(`${now}: Cache busted!`);
-
-            const result = getViewModels(models, viewStates);
-            return result;
-        },
-        cache,
-    );
 
     const ctx: Ctx = {
         state: stateAtom,
         viewState: viewStateAtom,
         getViewModels: () =>
             getViewModelsMemoized(getModels(stateAtom), viewStateAtom.deref().models),
-        getNextModelId,
         log,
-        cache,
-        cacheMap,
+        ...viewModelCache,
     };
 
     return () => {

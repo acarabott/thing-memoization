@@ -2,7 +2,7 @@ import { button, div, textArea } from "@thi.ng/hiccup-html";
 import { map, reverse, str } from "@thi.ng/transducers";
 import { addModel, getRandomModel, hoverModel, unhoverModel } from "./actions";
 import { Ctx, State } from "./api";
-import { CACHE_MAX_LENGTH } from "./main";
+import { CACHE_MAX_LENGTH } from "./cache";
 
 export const modelsCmp = (ctx: Ctx) => {
     const viewModels = ctx.getViewModels();
@@ -44,10 +44,7 @@ export const modelsCmp = (ctx: Ctx) => {
 };
 
 export const addModelCmp = (ctx: Ctx) => {
-    const addCmp = button(
-        { onclick: () => addModel(ctx, getRandomModel(ctx.getNextModelId)) },
-        "Add",
-    );
+    const addCmp = button({ onclick: () => addModel(ctx, getRandomModel()) }, "Add");
 
     return addCmp;
 };
@@ -63,7 +60,7 @@ export const noopModelCmp = (ctx: Ctx) => {
                     return state;
                 }),
         },
-        "No-op, should not bust cache",
+        "Replace state with value copy (non references), should not bust cache",
     );
 
     return noopCmp;
