@@ -7,12 +7,39 @@ interface State {
     values: number[];
 }
 
+interface Rect {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+
+interface ValueVM {
+    value: number;
+    rect: Rect;
+}
+
 interface Ctx {
     state: Atom<State>;
 }
 
 const getModels = (ctx: Ctx) => {
     ctx.state.deref().values;
+};
+
+const getViewModels = (values: State["values"]): ValueVM[] => {
+    const h = 50;
+    const viewModels = values.map((value, i) => ({
+        value,
+        rect: {
+            x: 10,
+            y: 10 + i * (h + 10),
+            w: 300,
+            h,
+        },
+    }));
+
+    return viewModels;
 };
 
 const app = () => {
@@ -24,8 +51,36 @@ const app = () => {
 
     return () => {
         const state = ctx.state.deref();
-        const valueCmps = map((value) => li({}, value), state.values);
-        return div({}, ul({}, valueCmps));
+        const viewModels = getViewModels(state.values);
+        const valueCmps = map(
+            (vm) =>
+                div(
+                    {
+                        style: {
+                            position: "absolute",
+                            left: `${vm.rect.x}px`,
+                            top: `${vm.rect.y}px`,
+                            width: `${vm.rect.w}px`,
+                            height: `${vm.rect.h}px`,
+                            background: "white",
+                        },
+                    },
+                    `value: ${vm.value} rect: ${JSON.stringify(vm.rect)}`,
+                ),
+            viewModels,
+        );
+
+        return div(
+            {
+                style: {
+                    position: "relative",
+                    width: "500px",
+                    height: "500px",
+                    background: "black",
+                },
+            },
+            valueCmps,
+        );
     };
 };
 
