@@ -12,7 +12,7 @@
         "check:tsc:watch": "tsc --noEmit --watch"
     },
     "author": "Arthur Carabott",
-    "license": "UNLICENSED",
+    "license": "MIT",
     "devDependencies": {
         "@typescript-eslint/eslint-plugin": "^5.28.0",
         "@typescript-eslint/parser": "^5.28.0",
@@ -20,9 +20,7 @@
         "eslint": "^8.17.0",
         "eslint-config-prettier": "^8.5.0",
         "eslint-plugin-prettier": "^4.0.0",
-        "fs-extra": "^10.1.0",
         "prettier": "^2.7.1",
-        "standardized-audio-context-mock": "^9.5.4",
         "typescript": "^4.7.3",
         "vite": "^2.9.12"
     },
