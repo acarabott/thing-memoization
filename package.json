@@ -1,0 +1,33 @@
+{
+    "name": "memoize",
+    "version": "1.0.0",
+    "description": "",
+    "type": "module",
+    "main": "app/index.html",
+    "scripts": {
+        "start": "vite app --open --port 6060",
+        "build": "vite build ./app --outDir ../dist --emptyOutDir",
+        "check:lint": "eslint app/src/**",
+        "check:tsc": "tsc --noEmit",
+        "check:tsc:watch": "tsc --noEmit --watch"
+    },
+    "author": "Arthur Carabott",
+    "license": "UNLICENSED",
+    "devDependencies": {
+        "@typescript-eslint/eslint-plugin": "^5.28.0",
+        "@typescript-eslint/parser": "^5.28.0",
+        "esbuild": "^0.14.45",
+        "eslint": "^8.17.0",
+        "eslint-config-prettier": "^8.5.0",
+        "eslint-plugin-prettier": "^4.0.0",
+        "fs-extra": "^10.1.0",
+        "prettier": "^2.7.1",
+        "standardized-audio-context-mock": "^9.5.4",
+        "typescript": "^4.7.3",
+        "vite": "^2.9.12"
+    },
+    "browserslist": [
+        "last 1 Chrome version",
+        "last 1 Firefox version"
+    ]
+}
