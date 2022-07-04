@@ -1,6 +1,6 @@
 import { defAtom } from "@thi.ng/atom";
 import { start } from "@thi.ng/hdom";
-import { addModel, getRandomModel } from "./actions";
+import { addModel, defModelViewState, getRandomModel } from "./actions";
 import { Ctx, State, ViewState } from "./api";
 import { defCache } from "./cache";
 import { mainCmp } from "./components";
@@ -8,6 +8,20 @@ import { mainCmp } from "./components";
 const app = () => {
     const stateAtom = defAtom<State>({ models: [] });
     const viewStateAtom = defAtom<ViewState>({ models: [] });
+
+    stateAtom.addWatch("modelsToViewStates", (_id, _oldState, state) => {
+        viewStateAtom.swapIn(["models"], (modelStateEntries) => {
+            const newStateEntries = state.models.map((model) => {
+                let modelState = modelStateEntries.find((mse) => mse.modelId === model.id);
+                if (modelState === undefined) {
+                    modelState = defModelViewState(model);
+                }
+                return modelState;
+            });
+
+            return newStateEntries;
+        });
+    });
 
     const log: string[] = [];
 

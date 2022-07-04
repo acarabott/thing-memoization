@@ -1,12 +1,12 @@
 import { uuid } from "@thi.ng/random";
 import { Ctx, Model, ModelViewState, ModelViewStateEntry, MODEL_MAX_VALUE } from "./api";
 
+export const defModelViewState = (model: Model): ModelViewStateEntry => {
+    return { modelId: model.id, state: { state: "none", grabbedOffset_px: 0 } };
+};
+
 export const addModel = (ctx: Ctx, model: Model) => {
     ctx.state.swapIn(["models"], (models): Model[] => [...models, model]);
-    ctx.viewState.swapIn(["models"], (models): ModelViewStateEntry[] => [
-        ...models,
-        { modelId: model.id, state: { state: "none", grabbedOffset_px: 0 } },
-    ]);
 };
 
 export const updateModel = (ctx: Ctx, update: Pick<Model, "id"> & Partial<Model>) => {
