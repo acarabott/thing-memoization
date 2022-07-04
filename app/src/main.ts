@@ -1,6 +1,6 @@
 import { defAtom } from "@thi.ng/atom";
 import { start } from "@thi.ng/hdom";
-import { addModel, defModelViewState, getRandomModel } from "./actions";
+import { addModel, defModelViewState } from "./actions";
 import { Ctx, State, ViewState } from "./api";
 import { defCache } from "./cache";
 import { mainCmp } from "./components";
@@ -37,9 +37,8 @@ const app = () => {
         ...defCache(stateAtom, viewStateAtom, onCacheBusted),
     };
 
-    for (let i = 0; i < 2; i++) {
-        addModel(ctx, getRandomModel());
-    }
+    addModel(ctx);
+    addModel(ctx);
 
     return () => {
         return mainCmp(ctx);

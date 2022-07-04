@@ -5,7 +5,11 @@ export const defModelViewState = (model: Model): ModelViewStateEntry => {
     return { modelId: model.id, state: { state: "none", grabbedOffset_px: 0 } };
 };
 
-export const addModel = (ctx: Ctx, model: Model) => {
+export const addModel = (ctx: Ctx) => {
+    const model: Model = {
+        id: uuid(),
+        value: Math.floor(Math.random() * MODEL_MAX_VALUE),
+    };
     ctx.state.swapIn(["models"], (models): Model[] => [...models, model]);
 };
 
@@ -20,13 +24,8 @@ export const updateModel = (ctx: Ctx, update: Pick<Model, "id"> & Partial<Model>
     );
 };
 
-export const getRandomModel = (): Model => {
-    const model: Model = {
-        id: uuid(),
-        value: Math.floor(Math.random() * MODEL_MAX_VALUE),
-    };
-
-    return model;
+export const removeModel = (ctx: Ctx, modelId: Model["id"]) => {
+    ctx.state.swapIn(["models"], (models) => models.filter((model) => model.id !== modelId));
 };
 
 const updateViewStates = (ctx: Ctx, modelId: Model["id"], viewState: Partial<ModelViewState>) => {

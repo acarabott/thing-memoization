@@ -4,10 +4,10 @@ import { fitClamped } from "@thi.ng/math";
 import { map, reverse, str } from "@thi.ng/transducers";
 import {
     addModel,
-    getRandomModel,
     grabModel,
     hoverModel,
     releaseModels,
+    removeModel,
     unhoverModel,
     updateModel,
 } from "./actions";
@@ -91,6 +91,7 @@ export const modelsCmp = (ctx: Ctx) => {
                 div({}, `id: ${vm.model.id}`),
                 div({}, `value: ${vm.model.value}`),
                 div({}, `rect: ${JSON.stringify(vm.rect)}`),
+                button({ onclick: () => removeModel(ctx, vm.model.id) }, "Remove"),
             ),
         viewModels,
     );
@@ -110,7 +111,7 @@ export const modelsCmp = (ctx: Ctx) => {
 };
 
 export const addModelCmp = (ctx: Ctx) => {
-    const addCmp = button({ onclick: () => addModel(ctx, getRandomModel()) }, "Add");
+    const addCmp = button({ onclick: () => addModel(ctx) }, "Add");
 
     return addCmp;
 };

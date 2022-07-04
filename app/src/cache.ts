@@ -21,7 +21,7 @@ const getViewModelsImpl = (
     models: State["models"],
     viewStates: ModelViewStateEntry[],
 ): ViewModel[] => {
-    const h = 60;
+    const h = 80;
     const viewModels = models.map((model, i): ViewModel => {
         const item = viewStates.find((findViewState) => findViewState.modelId === model.id);
         if (item === undefined) {
