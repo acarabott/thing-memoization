@@ -1,26 +1,29 @@
+import { defEquivMap } from "@thi.ng/associative";
 import { defAtom } from "@thi.ng/atom";
 import { start } from "@thi.ng/hdom";
 import { addModel, defModelViewState } from "./actions";
-import { Ctx, State, ViewState } from "./api";
+import { Ctx, ModelID, ModelViewState, State } from "./api";
 import { defCache } from "./cache";
 import { mainCmp } from "./components";
 
 const app = () => {
     const stateAtom = defAtom<State>({ models: [] });
-    const viewStateAtom = defAtom<ViewState>({ models: [] });
+    const viewState = defEquivMap<ModelID, ModelViewState>();
 
     stateAtom.addWatch("modelsToViewStates", (_id, _oldState, state) => {
-        viewStateAtom.swapIn(["models"], (modelStateEntries) => {
-            const newStateEntries = state.models.map((model) => {
-                let modelState = modelStateEntries.find((mse) => mse.modelId === model.id);
-                if (modelState === undefined) {
-                    modelState = defModelViewState(model);
-                }
-                return modelState;
-            });
+        const toAdd: Array<[ModelID, ModelViewState]> = [];
+        for (const model of state.models) {
+            let modelState = viewState.get(model.id);
+            if (modelState === undefined) {
+                modelState = defModelViewState();
+            }
+            toAdd.push([model.id, modelState]);
+        }
 
-            return newStateEntries;
-        });
+        viewState.clear();
+        for (const item of toAdd) {
+            viewState.set(...item);
+        }
     });
 
     const log: string[] = [];
@@ -32,9 +35,9 @@ const app = () => {
 
     const ctx: Ctx = {
         state: stateAtom,
-        viewState: viewStateAtom,
+        viewState,
         log,
-        ...defCache(stateAtom, viewStateAtom, onCacheBusted),
+        ...defCache(stateAtom, viewState, onCacheBusted),
     };
 
     addModel(ctx);

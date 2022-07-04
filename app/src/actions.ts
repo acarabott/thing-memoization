@@ -1,8 +1,8 @@
 import { uuid } from "@thi.ng/random";
-import { Ctx, Model, ModelViewState, ModelViewStateEntry, MODEL_MAX_VALUE } from "./api";
+import { Ctx, Model, ModelID, ModelViewState, MODEL_MAX_VALUE } from "./api";
 
-export const defModelViewState = (model: Model): ModelViewStateEntry => {
-    return { modelId: model.id, state: { state: "none", grabbedOffset_px: 0 } };
+export const defModelViewState = (): ModelViewState => {
+    return { state: "none", grabbedOffset_px: 0 };
 };
 
 export const addModel = (ctx: Ctx) => {
@@ -24,44 +24,32 @@ export const updateModel = (ctx: Ctx, update: Pick<Model, "id"> & Partial<Model>
     );
 };
 
-export const removeModel = (ctx: Ctx, modelId: Model["id"]) => {
+export const removeModel = (ctx: Ctx, modelId: ModelID) => {
     ctx.state.swapIn(["models"], (models) => models.filter((model) => model.id !== modelId));
 };
 
-const updateViewStates = (ctx: Ctx, modelId: Model["id"], viewState: Partial<ModelViewState>) => {
-    ctx.viewState.swapIn(["models"], (modelViewStates) =>
-        modelViewStates.map((modelViewStateEntry): ModelViewStateEntry => {
-            if (modelViewStateEntry.modelId === modelId) {
-                return {
-                    ...modelViewStateEntry,
-                    state: { ...modelViewStateEntry.state, ...viewState },
-                };
-            }
-
-            return modelViewStateEntry;
-        }),
-    );
+const updateViewStates = (ctx: Ctx, modelId: ModelID, viewState: Partial<ModelViewState>) => {
+    const existingState = ctx.viewState.get(modelId);
+    if (existingState === undefined) {
+        throw new Error(`No view state for id ${modelId}`);
+    }
+    ctx.viewState.set(modelId, { ...existingState, ...viewState });
 };
 
-export const hoverModel = (ctx: Ctx, modelId: Model["id"]) => {
+export const hoverModel = (ctx: Ctx, modelId: ModelID) => {
     updateViewStates(ctx, modelId, { state: "hovered" });
 };
 
-export const unhoverModel = (ctx: Ctx, modelId: Model["id"]) => {
+export const unhoverModel = (ctx: Ctx, modelId: ModelID) => {
     updateViewStates(ctx, modelId, { state: "none" });
 };
 
-export const grabModel = (ctx: Ctx, modelId: Model["id"], grabbedOffset_px: number) => {
+export const grabModel = (ctx: Ctx, modelId: ModelID, grabbedOffset_px: number) => {
     updateViewStates(ctx, modelId, { state: "grabbed", grabbedOffset_px });
 };
 
 export const releaseModels = (ctx: Ctx) => {
-    ctx.viewState.swapIn(["models"], (modelViewStates) =>
-        modelViewStates.map((modelViewStateEntry): ModelViewStateEntry => {
-            return {
-                ...modelViewStateEntry,
-                state: { ...modelViewStateEntry.state, state: "none" },
-            };
-        }),
-    );
+    for (const [key, value] of ctx.viewState) {
+        ctx.viewState.set(key, { ...value, state: "none" });
+    }
 };

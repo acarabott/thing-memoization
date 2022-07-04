@@ -7,24 +7,20 @@ import {
     Model,
     ModelCacheKey,
     ModelCacheValue,
-    ModelViewStateEntry,
+    ModelViewStates,
     MODEL_MAX_VALUE,
     State,
     ViewModel,
-    ViewState,
 } from "./api";
 import { WORKSPACE_WIDTH_PX } from "./components";
 
 export const CACHE_MAX_LENGTH = 3;
 
-const getViewModelsImpl = (
-    models: State["models"],
-    viewStates: ModelViewStateEntry[],
-): ViewModel[] => {
+const getViewModelsImpl = (models: State["models"], viewStates: ModelViewStates): ViewModel[] => {
     const h = 80;
     const viewModels = models.map((model, i): ViewModel => {
-        const item = viewStates.find((findViewState) => findViewState.modelId === model.id);
-        if (item === undefined) {
+        const state = viewStates.get(model.id);
+        if (state === undefined) {
             throw new Error("No view state found for model");
         }
         const x = fitClamped(model.value, 0, MODEL_MAX_VALUE, 0, WORKSPACE_WIDTH_PX);
@@ -37,7 +33,7 @@ const getViewModelsImpl = (
                 w: 300,
                 h,
             },
-            ...item.state,
+            ...state,
         };
     });
 
@@ -46,7 +42,7 @@ const getViewModelsImpl = (
 
 export const defCache = (
     state: Atom<State>,
-    viewState: Atom<ViewState>,
+    viewStatesStore: ModelViewStates,
     onCacheBusted: () => void,
 ) => {
     const cacheMap = defEquivMap<ModelCacheKey, ModelCacheValue>();
@@ -55,8 +51,8 @@ export const defCache = (
         map: () => cacheMap,
     });
 
-    const memoized = memoize<Model[], ModelViewStateEntry[], ViewModel[]>(
-        (models: State["models"], viewStates: ModelViewStateEntry[]) => {
+    const memoized = memoize<Model[], ModelViewStates, ViewModel[]>(
+        (models: State["models"], viewStates: ModelViewStates) => {
             onCacheBusted();
             const result = getViewModelsImpl(models, viewStates);
             return result;
@@ -65,7 +61,7 @@ export const defCache = (
     );
 
     const getViewModels = () => {
-        return memoized(state.deref().models, viewState.deref().models);
+        return memoized(state.deref().models, viewStatesStore);
     };
 
     return { cache, cacheMap, getViewModels };

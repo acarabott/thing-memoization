@@ -11,7 +11,7 @@ import {
     unhoverModel,
     updateModel,
 } from "./actions";
-import { Ctx, InteractionState, Model, MODEL_MAX_VALUE, State } from "./api";
+import { Ctx, InteractionState, ModelID, MODEL_MAX_VALUE, State } from "./api";
 import { CACHE_MAX_LENGTH } from "./cache";
 
 const modelClass = "model";
@@ -29,7 +29,7 @@ const colorLookup: Record<InteractionState, string> = {
 
 export const WORKSPACE_WIDTH_PX = 1000;
 
-const defOnDrag = (ctx: Ctx, target: HTMLElement, modelId: Model["id"]) => {
+const defOnDrag = (ctx: Ctx, target: HTMLElement, modelId: ModelID) => {
     const onDrag = (event: MouseEvent) => {
         const viewModel = ctx.getViewModels().find((vm) => vm.model.id === modelId);
         if (viewModel === undefined) {
@@ -159,12 +159,11 @@ const stateCmp = (ctx: Ctx) => {
 };
 
 const viewStateCmp = (ctx: Ctx) => {
-    const viewState = ctx.viewState.deref();
-    const value = JSON.stringify(viewState, null, 2);
+    const value = JSON.stringify([...ctx.viewState.entries()], null, 2);
 
     return div(
         {},
-        div({}, `View State - num models; ${viewState.models.length}`),
+        div({}, `View State - num models; ${ctx.viewState.size}`),
         textArea({
             value,
             cols: 55,
