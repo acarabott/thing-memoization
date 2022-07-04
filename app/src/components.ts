@@ -14,6 +14,9 @@ import {
 import { Ctx, InteractionState, Model, MODEL_MAX_VALUE, State } from "./api";
 import { CACHE_MAX_LENGTH } from "./cache";
 
+export const WORKSPACE_WIDTH_PX = 1000;
+
+// can't put these properties into components themselves, because of type complaints
 const modelClass = "model";
 css.injectStyleSheet(
     css.css([
@@ -21,15 +24,8 @@ css.injectStyleSheet(
     ]) as string,
 );
 
-const colorLookup: Record<InteractionState, string> = {
-    none: "white",
-    hovered: "rgb(43, 156, 212)",
-    grabbed: "rgb(43, 212, 156)",
-};
-
-export const WORKSPACE_WIDTH_PX = 1000;
-
-const defOnDrag = (ctx: Ctx, target: HTMLElement, modelId: Model["id"]) => {
+// factory function to generate the onDrag function for models
+const defOnModelDrag = (ctx: Ctx, target: HTMLElement, modelId: Model["id"]) => {
     const onDrag = (event: MouseEvent) => {
         const viewModel = ctx.getViewModels().find((vm) => vm.model.id === modelId);
         if (viewModel === undefined) {
@@ -45,8 +41,15 @@ const defOnDrag = (ctx: Ctx, target: HTMLElement, modelId: Model["id"]) => {
     return onDrag;
 };
 
+// component with all models on a background
 export const modelsCmp = (ctx: Ctx) => {
     const viewModels = ctx.getViewModels();
+
+    const colorLookup: Record<InteractionState, string> = {
+        none: "white",
+        hovered: "rgb(43, 156, 212)",
+        grabbed: "rgb(43, 212, 156)",
+    };
 
     const valueCmps = map(
         (vm) =>
@@ -72,20 +75,22 @@ export const modelsCmp = (ctx: Ctx) => {
                         }
                     },
                     onmousedown: (event) => {
+                        // grab the model
                         grabModel(ctx, vm.model.id, event.offsetX);
 
-                        const target = document.body;
-
-                        const onDrag = defOnDrag(ctx, target, vm.model.id);
-                        target.addEventListener("mousemove", onDrag);
+                        // add temporary drag and release functions to the document body
+                        const onDrag = defOnModelDrag(ctx, document.body, vm.model.id);
+                        document.body.addEventListener("mousemove", onDrag);
 
                         const onUp = () => {
                             releaseModels(ctx);
-                            target.removeEventListener("mouseup", onUp);
-                            target.removeEventListener("mousemove", onDrag);
+
+                            // remove temporary functions on mouse release
+                            document.body.removeEventListener("mouseup", onUp);
+                            document.body.removeEventListener("mousemove", onDrag);
                         };
 
-                        target.addEventListener("mouseup", onUp);
+                        document.body.addEventListener("mouseup", onUp);
                     },
                 },
                 div({}, `id: ${vm.model.id}`),
@@ -110,16 +115,20 @@ export const modelsCmp = (ctx: Ctx) => {
     );
 };
 
+// component to add a new model
 export const addModelCmp = (ctx: Ctx) => {
     const addCmp = button({ onclick: () => addModel(ctx) }, "Add");
 
     return addCmp;
 };
 
+// dummy component to prove the caching is working
 export const noopModelCmp = (ctx: Ctx) => {
     const noopCmp = button(
         {
             onclick: () =>
+                // replace the current models with a *value* equivalent copy
+                // should *not* trigger a cache invalidation
                 ctx.state.swap((oldState) => {
                     const state: State = {
                         models: oldState.models.map((model) => ({ ...model })),
@@ -133,6 +142,7 @@ export const noopModelCmp = (ctx: Ctx) => {
     return noopCmp;
 };
 
+// component to show our cache invalidation log
 export const logCmp = (ctx: Ctx) => {
     const value: string = str("\n", reverse(ctx.log));
 
@@ -143,6 +153,7 @@ export const logCmp = (ctx: Ctx) => {
     });
 };
 
+// component to inspect the current state
 const stateCmp = (ctx: Ctx) => {
     const state = ctx.state.deref();
     const value = JSON.stringify(state, null, 2);
@@ -158,6 +169,7 @@ const stateCmp = (ctx: Ctx) => {
     );
 };
 
+// component to inspect the current view state
 const viewStateCmp = (ctx: Ctx) => {
     const viewState = ctx.viewState.deref();
     const value = JSON.stringify(viewState, null, 2);
@@ -173,6 +185,7 @@ const viewStateCmp = (ctx: Ctx) => {
     );
 };
 
+// component to inspect the cache state
 export const cacheCmp = (ctx: Ctx) => {
     const value = JSON.stringify([...ctx.cache.values()], null, 2);
     return div(
@@ -182,6 +195,7 @@ export const cacheCmp = (ctx: Ctx) => {
     );
 };
 
+// main component
 export const mainCmp = (ctx: Ctx) => {
     return div(
         { style: { display: "flex" } },

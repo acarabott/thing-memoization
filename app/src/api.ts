@@ -4,31 +4,32 @@ import { ICache } from "@thi.ng/cache";
 
 export const MODEL_MAX_VALUE = 100;
 
+// our models, no UI state
 export interface Model {
     id: string;
     value: number;
 }
 
+// application state
 export interface State {
     models: Model[];
 }
 
+// UI state for our Models
 export type InteractionState = "none" | "hovered" | "grabbed";
 
 export interface ModelViewState {
+    modelId: Model["id"];
     state: InteractionState;
     grabbedOffset_px: number;
 }
 
-export interface ModelViewStateEntry {
-    modelId: Model["id"];
-    state: ModelViewState;
-}
-
+// application view state
 export interface ViewState {
-    models: ModelViewStateEntry[];
+    models: ModelViewState[];
 }
 
+// it's a rectangle!
 export interface Rect {
     x: number;
     y: number;
@@ -36,12 +37,14 @@ export interface Rect {
     h: number;
 }
 
+// the view model for our models. This is derived from the Model *and* it's ModelViewState
 export interface ViewModel extends ModelViewState {
     model: Model;
     rect: Rect;
 }
 
-export type ModelCacheKey = [Model[], ModelViewStateEntry[]];
+// helper types for cache
+export type ModelCacheKey = [Model[], ModelViewState[]];
 export type ModelCacheValue = ViewModel[];
 export type ModelCache = ICache<ModelCacheKey, ModelCacheValue>;
 
