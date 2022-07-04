@@ -2,9 +2,8 @@ import { defAtom } from "@thi.ng/atom";
 import { start } from "@thi.ng/hdom";
 import { addModel, getRandomModel } from "./actions";
 import { Ctx, State, ViewState } from "./api";
-import { defCache, defGetViewModelsMemoized } from "./cache";
+import { defCache } from "./cache";
 import { mainCmp } from "./components";
-import { getModels } from "./selectors";
 
 const app = () => {
     const stateAtom = defAtom<State>({ models: [] });
@@ -12,20 +11,16 @@ const app = () => {
 
     const log: string[] = [];
 
-    const viewModelCache = defCache();
-
-    const getViewModelsMemoized = defGetViewModelsMemoized(viewModelCache.cache, () => {
+    const onCacheBusted = () => {
         const now = new Date().toTimeString().split(" ")[0];
         log.push(`${now}: Cache busted!`);
-    });
+    };
 
     const ctx: Ctx = {
         state: stateAtom,
         viewState: viewStateAtom,
-        getViewModels: () =>
-            getViewModelsMemoized(getModels(stateAtom), viewStateAtom.deref().models),
         log,
-        ...viewModelCache,
+        ...defCache(stateAtom, viewStateAtom, onCacheBusted),
     };
 
     for (let i = 0; i < 2; i++) {
