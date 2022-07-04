@@ -11,8 +11,10 @@ export interface State {
     models: Model[];
 }
 
+export type InteractionState = "none" | "hovered" | "grabbed";
+
 export interface ModelViewState {
-    isHovered: boolean;
+    state: InteractionState;
 }
 
 export interface ModelViewStateEntry {

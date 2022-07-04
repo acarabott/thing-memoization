@@ -1,11 +1,30 @@
 import { button, div, textArea } from "@thi.ng/hiccup-html";
 import { map, reverse, str } from "@thi.ng/transducers";
-import { addModel, getRandomModel, hoverModel, unhoverModel } from "./actions";
-import { Ctx, State } from "./api";
+import {
+    addModel,
+    getRandomModel,
+    grabModel,
+    hoverModel,
+    releaseModels,
+    unhoverModel,
+} from "./actions";
+import { Ctx, InteractionState, State } from "./api";
 import { CACHE_MAX_LENGTH } from "./cache";
+
+const colorLookup: Record<InteractionState, string> = {
+    none: "white",
+    hovered: "rgb(43, 156, 212)",
+    grabbed: "rgb(43, 212, 156)",
+};
 
 export const modelsCmp = (ctx: Ctx) => {
     const viewModels = ctx.getViewModels();
+
+    const upTarget = document.body;
+    const onUp = () => {
+        releaseModels(ctx);
+        upTarget.removeEventListener("mouseup", onUp);
+    };
 
     const valueCmps = map(
         (vm) =>
@@ -17,10 +36,22 @@ export const modelsCmp = (ctx: Ctx) => {
                         top: `${vm.rect.y}px`,
                         width: `${vm.rect.w}px`,
                         height: `${vm.rect.h}px`,
-                        background: vm.isHovered ? "rgb(43, 156, 212)" : "white",
+                        background: colorLookup[vm.state],
                     },
-                    onmouseenter: () => hoverModel(ctx, vm.model.id),
-                    onmouseleave: () => unhoverModel(ctx, vm.model.id),
+                    onmouseenter: () => {
+                        if (vm.state !== "grabbed") {
+                            hoverModel(ctx, vm.model.id);
+                        }
+                    },
+                    onmouseleave: () => {
+                        if (vm.state !== "grabbed") {
+                            unhoverModel(ctx, vm.model.id);
+                        }
+                    },
+                    onmousedown: () => {
+                        grabModel(ctx, vm.model.id);
+                        upTarget.addEventListener("mouseup", onUp);
+                    },
                 },
                 div({}, `id: ${vm.model.id}`),
                 div({}, `value: ${vm.model.value}`),

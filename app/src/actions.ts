@@ -5,7 +5,7 @@ export const addModel = (ctx: Ctx, model: Model) => {
     ctx.state.swapIn(["models"], (models): Model[] => [...models, model]);
     ctx.viewState.swapIn(["models"], (models): ModelViewStateEntry[] => [
         ...models,
-        { modelId: model.id, state: { isHovered: false } },
+        { modelId: model.id, state: { state: "none" } },
     ]);
 };
 
@@ -34,9 +34,24 @@ const updateViewStates = (ctx: Ctx, modelId: Model["id"], viewState: Partial<Mod
 };
 
 export const hoverModel = (ctx: Ctx, modelId: Model["id"]) => {
-    updateViewStates(ctx, modelId, { isHovered: true });
+    updateViewStates(ctx, modelId, { state: "hovered" });
 };
 
 export const unhoverModel = (ctx: Ctx, modelId: Model["id"]) => {
-    updateViewStates(ctx, modelId, { isHovered: false });
+    updateViewStates(ctx, modelId, { state: "none" });
+};
+
+export const grabModel = (ctx: Ctx, modelId: Model["id"]) => {
+    updateViewStates(ctx, modelId, { state: "grabbed" });
+};
+
+export const releaseModels = (ctx: Ctx) => {
+    ctx.viewState.swapIn(["models"], (modelViewStates) =>
+        modelViewStates.map((modelViewStateEntry): ModelViewStateEntry => {
+            return {
+                ...modelViewStateEntry,
+                state: { ...modelViewStateEntry.state, state: "none" },
+            };
+        }),
+    );
 };
